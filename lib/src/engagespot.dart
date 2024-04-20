@@ -8,10 +8,9 @@ String _baseUrl = "https://api.engagespot.co/";
 String _version = "v3/";
 
 class Engagespot {
-  static void initSdk(
-      {required String apiKey, required String apiSecret, isDebug = false}) {
+  static void initSdk({required String apiKey, isDebug = false}) {
     _apiKey = apiKey;
-    _apiSecret = apiSecret;
+    // _apiSecret = apiSecret;
     _isDebug = isDebug;
 
     if (isDebug) {
@@ -84,14 +83,11 @@ class Engagespot {
         socket.io.connect();
 
         socket.on('NEW_NOTIFICATION', (data) {
-          // print(data["notification"]);
-          // var MessageData = json.decode(data.);
           EsMessage esMessage = EsMessage.fromJson(data["notification"]);
           onMessage(esMessage);
         });
         socket.on('NOTIFICATION_UNREAD_COUNT', (data) {
           onReadAll();
-          print(data);
         });
       } else {
         if (_isDebug) {
@@ -120,7 +116,6 @@ class Engagespot {
             });
 
         if (Response.statusCode == 200) {
-          print(Response.body);
           if (_isDebug) {
             log("Get Notification -- > Successfully ");
           }
