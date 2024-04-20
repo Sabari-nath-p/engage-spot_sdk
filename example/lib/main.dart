@@ -1,3 +1,4 @@
+import 'package:engagespot_sdk/models/Notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:engagespot_sdk/engagespot_sdk.dart';
 
@@ -21,8 +22,15 @@ class MainApp extends StatelessWidget {
         body: Center(
           child: InkWell(
               onTap: () async {
-                //  Engagespot.LoginUser(userId: "sabarinath5604@gmail.com");
-                Engagespot.ListernMessage(onMessage: () {});
+                // Engagespot.LoginUser(userId: "sabarinath5604@gmail.com");
+                Engagespot.ListernMessage(
+                    onMessage: (event) {
+                      print(event.title);
+                    },
+                    onReadAll: () {});
+                NotificationSet ns = await Engagespot.getNotifications();
+                print(ns.unReadCount);
+                print(ns.NotificationMessage);
               },
               child: Text('Hello World!')),
         ),

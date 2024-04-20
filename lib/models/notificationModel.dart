@@ -71,9 +71,15 @@ class EsMessage {
     id = json['id'];
     title = json['title'];
     message = json['message'];
+    if (message == null) {
+      message = json["description"];
+    }
     icon = json['icon'];
     url = json['url'];
     createdAt = json['createdAt'];
+    if (createdAt == null) {
+      createdAt = json["created_at"];
+    }
     seenAt = json['seenAt'];
     clickedAt = json['clickedAt'];
   }

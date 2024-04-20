@@ -4,8 +4,8 @@ String? _apiKey;
 String? _apiSecret;
 bool _isDebug = false;
 String? _userID;
-String baseUrl = "https://api.engagespot.co/";
-String version = "v3/";
+String _baseUrl = "https://api.engagespot.co/";
+String _version = "v3/";
 
 class Engagespot {
   static void initSdk(
@@ -20,7 +20,51 @@ class Engagespot {
     _getUserID();
   }
 
-  static ListernMessage({required Function onMessage}) async {
+  static markAsRead() async {
+    final Response = await post(
+      Uri.parse(
+          _baseUrl + _version + "notifications/markAllNotificationsAsSeen"),
+      headers: {
+        "X-ENGAGESPOT-API-KEY": _apiKey!,
+        "X-ENGAGESPOT-USER-ID": _userID!,
+        "X-ENGAGESPOT-DEVICE-ID": "123"
+      },
+    );
+  }
+
+  static RegisterFCM(String Token) async {
+    try {
+      final Response = await put(Uri.parse(_baseUrl + _version + "profile"),
+          headers: {
+            "X-ENGAGESPOT-API-KEY": _apiKey!,
+            "X-ENGAGESPOT-USER-ID": _userID!,
+            "Content-Type": "application/json"
+          },
+          body: json.encode({
+            "fcm": {
+              "tokens": [Token]
+            }
+          }));
+
+      log(Response.body);
+      if (Response.statusCode == 200) {
+        if (_isDebug) {
+          log("FCM Register -- > Successfully ");
+        }
+      } else {
+        if (_isDebug) {
+          if (_apiKey == null) log("API key is not initalised");
+          if (_userID == null) log("User not logined");
+        }
+      }
+    } catch (e) {
+      log(e.toString());
+    }
+  }
+
+  static ListernMessage(
+      {required void onMessage(EsMessage es),
+      required void onReadAll()}) async {
     try {
       if (_userID != null && _apiKey != null) {
         IO.Socket socket = IO.io(
@@ -40,9 +84,13 @@ class Engagespot {
         socket.io.connect();
 
         socket.on('NEW_NOTIFICATION', (data) {
-          print(data);
+          // print(data["notification"]);
+          // var MessageData = json.decode(data.);
+          EsMessage esMessage = EsMessage.fromJson(data["notification"]);
+          onMessage(esMessage);
         });
         socket.on('NOTIFICATION_UNREAD_COUNT', (data) {
+          onReadAll();
           print(data);
         });
       } else {
@@ -54,31 +102,36 @@ class Engagespot {
     } catch (e) {}
   }
 
-  static Future<List<EsMessage>> getNotifications() async {
+  static Future<NotificationSet> getNotifications() async {
     List<EsMessage> NotificationList = [];
-
+    NotificationSet nsList =
+        NotificationSet(unReadCount: 0, NotificationMessage: []);
+    int unReadMessage = 0;
     try {
       if (_apiKey != null &&
           _apiKey != "" &&
           _userID != null &&
           _userID != "") {
-        final Response =
-            await get(Uri.parse(baseUrl + version + "notifications"), headers: {
-          "X-ENGAGESPOT-API-KEY": _apiKey!,
-          "X-ENGAGESPOT-USER-ID": _userID!,
-        });
+        final Response = await get(
+            Uri.parse(_baseUrl + _version + "notifications"),
+            headers: {
+              "X-ENGAGESPOT-API-KEY": _apiKey!,
+              "X-ENGAGESPOT-USER-ID": _userID!,
+            });
 
         if (Response.statusCode == 200) {
+          print(Response.body);
           if (_isDebug) {
             log("Get Notification -- > Successfully ");
           }
           var jMessage = json.decode(Response.body);
           NotificationModel MessageData = NotificationModel.fromJson(jMessage);
           NotificationList = MessageData.esMessage!;
+          nsList.unReadCount = MessageData.unreadCount;
+          nsList.NotificationMessage = NotificationList;
         } else {
           if (_isDebug) {
             log("Get Notification Failed -- > ${Response.statusCode} ");
-            print(Response.body);
           }
         }
       } else {
@@ -91,7 +144,7 @@ class Engagespot {
       log(e.toString());
     }
 
-    return NotificationList;
+    return nsList;
   }
 
   static void _getUserID() async {
@@ -104,14 +157,16 @@ class Engagespot {
 
     try {
       if (_apiKey != null) {
-        final Response =
-            await post(Uri.parse(baseUrl + version + "sdk/connect"), headers: {
-          "X-ENGAGESPOT-API-KEY": _apiKey!,
-          "X-ENGAGESPOT-USER-ID": _userID!,
-          "X-ENGAGESPOT-DEVICE-ID": "123"
-        }, body: {
-          "deviceType": "android"
-        });
+        final Response = await post(
+            Uri.parse(_baseUrl + _version + "sdk/connect"),
+            headers: {
+              "X-ENGAGESPOT-API-KEY": _apiKey!,
+              "X-ENGAGESPOT-USER-ID": _userID!,
+              "X-ENGAGESPOT-DEVICE-ID": "123"
+            },
+            body: {
+              "deviceType": "android"
+            });
 
         if (Response.statusCode == 200) {
           if (_isDebug) {

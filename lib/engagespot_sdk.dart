@@ -6,6 +6,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:engagespot_sdk/models/Notifications.dart';
 import 'package:engagespot_sdk/models/notificationModel.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
